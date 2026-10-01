@@ -1,0 +1,111 @@
+[project]
+name = "voice-tutor"
+version = "0.1.0"
+description = "A voice tutor with a diagram agent and a shared whiteboard."
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.70",
+    "google-genai>=1.40,<3",
+    "httpx>=0.27",
+    "httpx2",
+    "nicegui>=3.0,<4",
+    "python-dotenv>=1.0",
+    "starlette",
+    "websockets>=13",
+]
+
+[project.scripts]
+tutor = "apps.voice_tutor.__main__:main"
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.20",
+    "import-linter>=2.1",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["events", "providers", "packages", "services", "apps"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["live: calls a real vendor API; needs keys in .env"]
+addopts = "-m 'not live'"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["events", "providers", "packages", "services", "apps"]
+
+[tool.basedpyright]
+include = ["events", "providers", "packages", "services", "apps", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+
+[tool.importlinter]
+root_packages = ["events", "providers", "packages", "services", "apps"]
+
+[[tool.importlinter.contracts]]
+name = "Zones import in one direction"
+type = "layers"
+layers = ["apps", "services", "packages", "providers", "events"]
+
+[[tool.importlinter.contracts]]
+name = "Events use only the standard library"
+type = "forbidden"
+source_modules = ["events"]
+forbidden_modules = ["providers", "packages", "services", "apps"]
+
+[[tool.importlinter.contracts]]
+name = "Services use provider bases, never a vendor"
+type = "forbidden"
+source_modules = ["services"]
+forbidden_modules = [
+    "providers.llm.anthropic",
+    "providers.llm.gemini",
+    "providers.stt.elevenlabs",
+    "providers.tts.elevenlabs",
+    "providers.testing",
+]
+
+[[tool.importlinter.contracts]]
+name = "Vendors are independent of each other"
+type = "independence"
+modules = [
+    "providers.llm.anthropic",
+    "providers.llm.gemini",
+    "providers.stt.elevenlabs",
+    "providers.tts.elevenlabs",
+]
+
+[[tool.importlinter.contracts]]
+name = "Production code never imports test fakes"
+type = "forbidden"
+source_modules = [
+    "events",
+    "providers.errors",
+    "providers.llm",
+    "providers.stt",
+    "providers.tts",
+    "packages",
+    "services",
+]
+forbidden_modules = ["providers.testing"]
+
+[[tool.importlinter.contracts]]
+name = "Services talk only through the bus"
+type = "independence"
+modules = ["services.tutor", "services.diagrammer", "services.whiteboard"]

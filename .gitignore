@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.env
+.pytest_cache/
+.ruff_cache/
+.nicegui/
+*.egg-info/
+.import_linter_cache/
+.DS_Store
